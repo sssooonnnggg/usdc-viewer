@@ -1,0 +1,105 @@
+{
+    "name": "usdc-viewer",
+    "displayName": "Usdc Viewer",
+    "description": "View OpenUsd binary format(.usdc) as plain text format",
+    "publisher": "sssooonnnggg",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.81.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "icon": "icon.png",
+    "keywords": [
+        "usd",
+        "usdc",
+        "usda",
+        "OpenUsd"
+    ],
+    "homepage": "https://github.com/sssooonnnggg/blob/master/README.md",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/sssooonnnggg/usdc-viewer.git"
+    },
+    "activationEvents": [],
+    "main": "./out/extension.js",
+    "enabledApiProposals": [
+        "contribEditorContentMenu"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "usdc",
+                "extensions": [
+                    ".usdc"
+                ]
+            }
+        ],
+        "configuration": {
+            "title": "Usdc Viewer",
+            "properties": {
+                "usdc-viewer.usdRoot": {
+                    "type": "string",
+                    "description": "Path of the OpenUsd library"
+                }
+            }
+        },
+        "commands": [
+            {
+                "command": "usdc-viewer.open",
+                "title": "Open With Usdc Viewer"
+            },
+            {
+                "command": "usdc-viewer.convert",
+                "title": "Save As Usda"
+            }
+        ],
+        "menus": {
+            "explorer/context": [
+                {
+                    "command": "usdc-viewer.open",
+                    "group": "Usdc",
+                    "when": "resourceLangId == usdc"
+                },
+                {
+                    "command": "usdc-viewer.convert",
+                    "group": "Usdc",
+                    "when": "resourceLangId == usdc"
+                }
+            ],
+            "editor/title/context": [
+                {
+                    "command": "usdc-viewer.open",
+                    "group": "Usdc",
+                    "when": "resourceLangId == usdc"
+                },
+                {
+                    "command": "usdc-viewer.convert",
+                    "group": "Usdc",
+                    "when": "resourceLangId == usdc"
+                }
+            ]
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "yarn run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "yarn run compile && yarn run lint",
+        "lint": "eslint src --ext ts",
+        "test": "node ./out/test/runTest.js"
+    },
+    "devDependencies": {
+        "@types/vscode": "^1.81.0",
+        "@types/mocha": "^10.0.1",
+        "@types/node": "16.x",
+        "@typescript-eslint/eslint-plugin": "^6.4.1",
+        "@typescript-eslint/parser": "^6.4.1",
+        "eslint": "^8.47.0",
+        "glob": "^10.3.3",
+        "mocha": "^10.2.0",
+        "typescript": "^5.1.6",
+        "@vscode/test-electron": "^2.3.4"
+    }
+}
