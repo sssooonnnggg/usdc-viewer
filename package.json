@@ -24,9 +24,6 @@
     },
     "activationEvents": [],
     "main": "./out/extension.js",
-    "enabledApiProposals": [
-        "contribEditorContentMenu"
-    ],
     "contributes": {
         "languages": [
             {
