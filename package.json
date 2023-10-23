@@ -51,6 +51,10 @@
             {
                 "command": "usdc-viewer.convert",
                 "title": "Save As Usda"
+            },
+            {
+                "command": "usdc-viewer.convertRecursively",
+                "title": "Convert Usdc to Usda In Folder"
             }
         ],
         "menus": {
@@ -64,6 +68,11 @@
                     "command": "usdc-viewer.convert",
                     "group": "Usdc",
                     "when": "resourceLangId == usdc"
+                },
+                {
+                    "command": "usdc-viewer.convertRecursively",
+                    "group": "Usdc",
+                    "when": "explorerResourceIsFolder"
                 }
             ],
             "editor/title/context": [
