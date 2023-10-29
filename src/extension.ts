@@ -4,18 +4,18 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import * as os from 'os';
 
 const MAX_TEXT_LENGTH = 1024 * 1024 * 1024;
 const execAsync = promisify(exec);
-const getPlainText = async (usdRoot: string, usdcPath: string) => {
-    const { stdout } = await execAsync(`usdcat ${usdcPath}`, {
+const usdcToUsda = async (usdRoot: string, usdcPath: string, outputPath: string) => {
+    await execAsync(`usdcat ${usdcPath} -o ${outputPath}`, {
         env: {
             PYTHONPATH: `${usdRoot}/lib/python`,
             PATH: `${process.env.PATH};${usdRoot}/bin;${usdRoot}/lib`,
         },
         maxBuffer: MAX_TEXT_LENGTH,
     });
-    return stdout.toString();
 }
 
 const getAllUsdcFilesInDirectory = async (root: string): Promise<string[]> => {
@@ -44,9 +44,8 @@ const convertDirectory = async (usdRoot: string, usdDirectory: string) => {
         const totalCount = usdcFiles.length;
         for (const usdcFile of usdcFiles) {
             const usdaFile = path.join(path.dirname(usdcFile), path.basename(usdcFile, ".usdc") + ".usda");
-            const plainText = await getPlainText(usdRoot, usdcFile);
+            await usdcToUsda(usdRoot, usdcFile, usdaFile);
             progress.report({ message: `Converting ${usdaFile}`, increment: 100 / totalCount });
-            await fs.writeFile(usdaFile, plainText);
         }
     });
 }
@@ -63,7 +62,10 @@ export function activate(context: vscode.ExtensionContext) {
     const usdcProvider = new class implements vscode.TextDocumentContentProvider {
         async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
             const usdcPath = uri.path;
-            return await getPlainText(usdRoot, usdcPath);
+            const tmpUsda = path.resolve(os.tmpdir(), path.basename(usdcPath, '.usdc') + '.usda');
+            await usdcToUsda(usdRoot, usdcPath, tmpUsda);
+            const content = await fs.readFile(tmpUsda);
+            return content.toString();
         }
     };
     context.subscriptions.push(vscode.workspace.registerTextDocumentContentProvider('usdc', usdcProvider));
@@ -78,9 +80,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     const convert = vscode.commands.registerCommand('usdc-viewer.convert', async (uri) => {
         const usdcPath = uri?.fsPath;
-        const plainText = await getPlainText(usdRoot, usdcPath);
         const usdaPath = path.resolve(usdcPath, '../', path.basename(usdcPath, '.usdc') + '.usda');
-        await fs.writeFile(usdaPath, plainText);
+        await usdcToUsda(usdRoot, usdcPath, usdaPath);
         const doc = await vscode.workspace.openTextDocument(usdaPath);
         await vscode.window.showTextDocument(doc, { preview: false });
     });

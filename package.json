@@ -3,7 +3,7 @@
     "displayName": "Usdc Viewer",
     "description": "View OpenUsd binary format(.usdc) as plain text format",
     "publisher": "sssooonnnggg",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "engines": {
         "vscode": "^1.81.0"
     },
