@@ -7,9 +7,11 @@ import * as path from 'path';
 import * as os from 'os';
 
 const MAX_TEXT_LENGTH = 1024 * 1024 * 1024;
+const TASK_CHUNK_SIZE = 32;
 const execAsync = promisify(exec);
+
 const usdcToUsda = async (usdRoot: string, usdcPath: string, outputPath: string) => {
-    await execAsync(`usdcat ${usdcPath} -o ${outputPath}`, {
+    return execAsync(`usdcat ${usdcPath} -o ${outputPath}`, {
         env: {
             PYTHONPATH: `${usdRoot}/lib/python`,
             PATH: `${process.env.PATH};${usdRoot}/bin;${usdRoot}/lib`,
@@ -31,10 +33,19 @@ const getAllUsdcFilesInDirectory = async (root: string): Promise<string[]> => {
     return usdcFiles;
 }
 
+const intoChunks = <T>(array: T[], chunkSize: number): (T[])[] => {
+    let chunks = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+        chunks.push(array.slice(i, i + chunkSize));
+    }
+    return chunks;
+}
+
 const convertDirectory = async (usdRoot: string, usdDirectory: string) => {
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0].uri.fsPath ?? '';
     vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: `Converting usdc to usda in ${usdDirectory}`,
+        title: `Converting usdc to usda in ${path.relative(workspaceRoot, usdDirectory)}`,
         cancellable: true
     }, async (progress, token) => {
         token.onCancellationRequested(() => { });
@@ -42,10 +53,19 @@ const convertDirectory = async (usdRoot: string, usdDirectory: string) => {
 
         const usdcFiles = await getAllUsdcFilesInDirectory(usdDirectory);
         const totalCount = usdcFiles.length;
-        for (const usdcFile of usdcFiles) {
-            const usdaFile = path.join(path.dirname(usdcFile), path.basename(usdcFile, ".usdc") + ".usda");
-            await usdcToUsda(usdRoot, usdcFile, usdaFile);
-            progress.report({ message: `Converting ${usdaFile}`, increment: 100 / totalCount });
+
+        const chunks = intoChunks(usdcFiles, TASK_CHUNK_SIZE);
+        for (const chunk of chunks) {
+            let promises = [];
+            for (const usdcFile of chunk) {
+                const usdaFile = path.join(path.dirname(usdcFile), path.basename(usdcFile, ".usdc") + ".usda");
+                const relativePath = path.relative(usdDirectory, usdaFile);
+                const finished = () => progress.report({ message: `Converting ${relativePath}`, increment: 100 / totalCount });
+                const promise = usdcToUsda(usdRoot, usdcFile, usdaFile).then(() => finished());
+                promises.push(promise);
+            }
+            
+            await Promise.all(promises);
         }
     });
 }
