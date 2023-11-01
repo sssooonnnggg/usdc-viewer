@@ -18,7 +18,7 @@ You should install the OpenUsd library first.
 
 ## Usage
 
-- View or conve0rt a single usdc file:
+- View or convert a single usdc file:
     - Open a usdc file in vscode
     - Right click on the file and select "Open With Usdc Viewer" or "Save As Usda"
 - Convert all usdc files in a folder

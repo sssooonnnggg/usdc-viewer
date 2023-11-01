@@ -41,12 +41,15 @@ const intoChunks = <T>(array: T[], chunkSize: number): (T[])[] => {
     return chunks;
 }
 
+const getUsdaName = (usdcFile: string) => path.basename(usdcFile, ".usdc") + ".usda";
+const getUsdaPath = (usdcFile: string) => path.join(path.dirname(usdcFile), getUsdaName(usdcFile));
+
 const convertDirectory = async (usdRoot: string, usdDirectory: string) => {
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0].uri.fsPath ?? '';
     vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: `Converting usdc to usda in ${path.relative(workspaceRoot, usdDirectory)}`,
-        cancellable: true
+        title: `Converting usdc to usda in ${path.relative(workspaceRoot, usdDirectory) ?? 'Worldspace folder'}`,
+        cancellable: false
     }, async (progress, token) => {
         token.onCancellationRequested(() => { });
         progress.report({ increment: 0 });
@@ -58,13 +61,13 @@ const convertDirectory = async (usdRoot: string, usdDirectory: string) => {
         for (const chunk of chunks) {
             let promises = [];
             for (const usdcFile of chunk) {
-                const usdaFile = path.join(path.dirname(usdcFile), path.basename(usdcFile, ".usdc") + ".usda");
+                const usdaFile = getUsdaPath(usdcFile);
                 const relativePath = path.relative(usdDirectory, usdaFile);
                 const finished = () => progress.report({ message: `Converting ${relativePath}`, increment: 100 / totalCount });
                 const promise = usdcToUsda(usdRoot, usdcFile, usdaFile).then(() => finished());
                 promises.push(promise);
             }
-            
+
             await Promise.all(promises);
         }
     });
@@ -82,7 +85,7 @@ export function activate(context: vscode.ExtensionContext) {
     const usdcProvider = new class implements vscode.TextDocumentContentProvider {
         async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
             const usdcPath = uri.path;
-            const tmpUsda = path.resolve(os.tmpdir(), path.basename(usdcPath, '.usdc') + '.usda');
+            const tmpUsda = path.resolve(os.tmpdir(), getUsdaName(usdcPath));
             await usdcToUsda(usdRoot, usdcPath, tmpUsda);
             const content = await fs.readFile(tmpUsda);
             return content.toString();
@@ -100,7 +103,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const convert = vscode.commands.registerCommand('usdc-viewer.convert', async (uri) => {
         const usdcPath = uri?.fsPath;
-        const usdaPath = path.resolve(usdcPath, '../', path.basename(usdcPath, '.usdc') + '.usda');
+        const usdaPath = getUsdaPath(usdcPath);
         await usdcToUsda(usdRoot, usdcPath, usdaPath);
         const doc = await vscode.workspace.openTextDocument(usdaPath);
         await vscode.window.showTextDocument(doc, { preview: false });
@@ -111,6 +114,7 @@ export function activate(context: vscode.ExtensionContext) {
         const usdDirectory = uri?.fsPath;
         await convertDirectory(usdRoot, usdDirectory);
     })
+    context.subscriptions.push(convertRecursively);
 }
 
 export function deactivate() { }
