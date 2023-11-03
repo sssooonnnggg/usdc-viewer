@@ -1,6 +1,6 @@
 
 import * as vscode from 'vscode';
-import { exec } from 'child_process';
+import { exec, execSync } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -8,10 +8,22 @@ import * as os from 'os';
 
 const MAX_TEXT_LENGTH = 1024 * 1024 * 1024;
 const TASK_CHUNK_SIZE = 32;
+
 const execAsync = promisify(exec);
 
-const usdcToUsda = async (usdRoot: string, usdcPath: string, outputPath: string) => {
-    return execAsync(`usdcat ${usdcPath} -o ${outputPath}`, {
+const getConfig = () => vscode.workspace.getConfiguration('usdc-viewer');
+
+const getUsdRoot = () => {
+    const usdRoot = getConfig().usdRoot;
+    if (!usdRoot) {
+        vscode.window.showErrorMessage('Failed to get usdRoot');
+    }
+    return usdRoot;
+}
+
+const tryExec = async (command: string) => {
+    const usdRoot = getUsdRoot();
+    return execAsync(command, {
         env: {
             PYTHONPATH: `${usdRoot}/lib/python`,
             PATH: `${process.env.PATH};${usdRoot}/bin;${usdRoot}/lib`,
@@ -21,6 +33,10 @@ const usdcToUsda = async (usdRoot: string, usdcPath: string, outputPath: string)
         vscode.window.showErrorMessage(err.message);
         throw err;
     });
+}
+
+const usdcToUsda = async (usdRoot: string, usdcPath: string, outputPath: string) => {
+    return tryExec(`usdcat ${usdcPath} -o ${outputPath}`);
 }
 
 const getAllUsdcFilesInDirectory = async (root: string): Promise<string[]> => {
@@ -51,7 +67,7 @@ const convertDirectory = async (usdRoot: string, usdDirectory: string) => {
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0].uri.fsPath ?? '';
     vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: `Converting usdc in ${path.relative(workspaceRoot, usdDirectory) ?? 'Worldspace folder'}`,
+        title: `Converting usdc in ${path.relative(workspaceRoot, usdDirectory) || path.basename(usdDirectory)}`,
         cancellable: false
     }, async (progress, token) => {
         token.onCancellationRequested(() => { });
@@ -83,16 +99,6 @@ const convertDirectory = async (usdRoot: string, usdDirectory: string) => {
         const time = (endTime - startTime) / 1000;
         vscode.window.showInformationMessage(`Converted ${totalCount} files in ${time.toFixed(2)} seconds`);
     });
-}
-
-const getConfig = () => vscode.workspace.getConfiguration('usdc-viewer');
-
-const getUsdRoot = () => {
-    const usdRoot = getConfig().usdRoot;
-    if (!usdRoot) {
-        vscode.window.showErrorMessage('Failed to get usdRoot');
-    }
-    return usdRoot;
 }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -129,6 +135,12 @@ export function activate(context: vscode.ExtensionContext) {
         await convertDirectory(getUsdRoot(), usdDirectory);
     })
     context.subscriptions.push(convertRecursively);
+
+    const openWithUsdView = vscode.commands.registerCommand('usdc-viewer.openWithUsdView', async uri => {
+        const usdPath = uri?.fsPath;
+        tryExec(`usdview ${usdPath}`);
+    });
+    context.subscriptions.push(openWithUsdView);
 }
 
 export function deactivate() { }

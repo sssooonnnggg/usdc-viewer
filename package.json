@@ -3,7 +3,7 @@
     "displayName": "Usdc Viewer",
     "description": "View OpenUsd binary format(.usdc) as plain text format",
     "publisher": "sssooonnnggg",
-    "version": "0.0.9",
+    "version": "0.0.10",
     "engines": {
         "vscode": "^1.81.0"
     },
@@ -32,6 +32,12 @@
                     ".usdc",
                     ".usd"
                 ]
+            },
+            {
+                "id": "usda",
+                "extensions": [
+                    ".usda"
+                ]
             }
         ],
         "configuration": {
@@ -55,6 +61,10 @@
             {
                 "command": "usdc-viewer.convertRecursively",
                 "title": "Convert Usdc to Usda In Folder"
+            },
+            {
+                "command": "usdc-viewer.openWithUsdView",
+                "title": "Open With UsdView"
             }
         ],
         "menus": {
@@ -73,6 +83,11 @@
                     "command": "usdc-viewer.convertRecursively",
                     "group": "Usdc",
                     "when": "explorerResourceIsFolder"
+                },
+                {
+                    "command": "usdc-viewer.openWithUsdView",
+                    "group": "Usdc",
+                    "when": "resourceLangId == usdc || resourceLangId == usda"
                 }
             ],
             "editor/title/context": [
@@ -85,6 +100,11 @@
                     "command": "usdc-viewer.convert",
                     "group": "Usdc",
                     "when": "resourceLangId == usdc"
+                },
+                {
+                    "command": "usdc-viewer.openWithUsdView",
+                    "group": "Usdc",
+                    "when": "resourceLangId == usdc || resourceLangId == usda"
                 }
             ]
         }
