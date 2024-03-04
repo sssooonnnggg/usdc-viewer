@@ -3,7 +3,7 @@
     "displayName": "Usdc Viewer",
     "description": "View OpenUsd binary format(.usdc) as plain text format",
     "publisher": "sssooonnnggg",
-    "version": "0.0.11",
+    "version": "0.0.12",
     "engines": {
         "vscode": "^1.81.0"
     },
@@ -59,8 +59,16 @@
                 "title": "Save As Usda"
             },
             {
+                "command": "usdc-viewer.convertToUsdc",
+                "title": "Save As Usdc"
+            },
+            {
                 "command": "usdc-viewer.convertUsdcRecursively",
                 "title": "Convert Usdc to Usda In Folder"
+            },
+            {
+                "command": "usdc-viewer.convertUsdaRecursively",
+                "title": "Convert Usda to Usdc In Folder"
             },
             {
                 "command": "usdc-viewer.openWithUsdView",
@@ -80,8 +88,18 @@
                     "when": "resourceLangId == usdc"
                 },
                 {
+                    "command": "usdc-viewer.convertToUsdc",
+                    "group": "Usda",
+                    "when": "resourceLangId == usda"
+                },
+                {
                     "command": "usdc-viewer.convertUsdcRecursively",
                     "group": "Usdc",
+                    "when": "explorerResourceIsFolder"
+                },
+                {
+                    "command": "usdc-viewer.convertUsdaRecursively",
+                    "group": "Usda",
                     "when": "explorerResourceIsFolder"
                 },
                 {
@@ -100,6 +118,11 @@
                     "command": "usdc-viewer.convert",
                     "group": "Usdc",
                     "when": "resourceLangId == usdc"
+                },
+                {
+                    "command": "usdc-viewer.convertToUsdc",
+                    "group": "Usda",
+                    "when": "resourceLangId == usda"
                 },
                 {
                     "command": "usdc-viewer.openWithUsdView",

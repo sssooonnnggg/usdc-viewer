@@ -105,22 +105,27 @@ const convertDirectory = async (usdRoot: string, usdDirectory: string, sourceExt
 
 export function activate(context: vscode.ExtensionContext) {
 
-    const viewUsda = async (uri: any, usdaPath: string) => {
-        const usdcPath = uri?.fsPath;
-        await usdcat(getUsdRoot(), usdcPath, usdaPath);
-        const doc = await vscode.workspace.openTextDocument(usdaPath);
+    const viewFileWithAnotherExtension = async (uri: any, outputPath: string) => {
+        const inputPath = uri?.fsPath;
+        await usdcat(getUsdRoot(), inputPath, outputPath);
+        const doc = await vscode.workspace.openTextDocument(outputPath);
         await vscode.window.showTextDocument(doc, { preview: false });
     };
 
     const open = vscode.commands.registerCommand('usdc-viewer.open', async (uri) => {
-        await viewUsda(uri, path.resolve(os.tmpdir(), getTargetName(uri?.fsPath)));
+        await viewFileWithAnotherExtension(uri, path.resolve(os.tmpdir(), getTargetName(uri?.fsPath)));
     });
     context.subscriptions.push(open);
 
     const convert = vscode.commands.registerCommand('usdc-viewer.convert', async (uri) => {
-        await viewUsda(uri, getOutputPath(uri?.fsPath));
+        await viewFileWithAnotherExtension(uri, getOutputPath(uri?.fsPath));
     });
     context.subscriptions.push(convert);
+
+    const convertToUsdc = vscode.commands.registerCommand('usdc-viewer.convertToUsdc', async (uri) => {
+        await viewFileWithAnotherExtension(uri, getOutputPath(uri?.fsPath));
+    });
+    context.subscriptions.push(convertToUsdc);
 
     const convertUsdcRecursively = vscode.commands.registerCommand('usdc-viewer.convertUsdcRecursively', async uri => {
         const usdDirectory = uri?.fsPath;
