@@ -26,7 +26,7 @@ const tryExec = async (command: string) => {
     return execAsync(command, {
         env: {
             PYTHONPATH: `${usdRoot}/lib/python`,
-            PATH: `${process.env.PATH};${usdRoot}/bin;${usdRoot}/lib`,
+            PATH: `${usdRoot}/bin;${usdRoot}/lib;${usdRoot}/python;${process.env.PATH}`,
         },
         maxBuffer: MAX_TEXT_LENGTH,
     }).catch(err => {
