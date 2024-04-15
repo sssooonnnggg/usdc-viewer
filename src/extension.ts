@@ -36,7 +36,7 @@ const tryExec = async (command: string) => {
 }
 
 const usdcat = async (usdRoot: string, inputPath: string, outputPath: string) => {
-    return tryExec(`usdcat ${inputPath} -o ${outputPath}`);
+    return tryExec(`usdcat "${inputPath}" -o "${outputPath}"`);
 }
 
 const getAllUsdFilesInDirectory = async (root: string, extension: string): Promise<string[]> => {
