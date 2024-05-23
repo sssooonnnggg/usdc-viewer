@@ -14,7 +14,7 @@ You should install the OpenUsd library first.
 
 ## Extension Settings
 
-- `usdc-viewer.usdRoot`: The root path of the OpenUsd library.
+- `usdc-viewer.usdRoot`: The root path of the OpenUsd library. If you has no environment to compile it from source, you can download the precompiled binaries from the [NVIDIA's official website](https://developer.nvidia.com/usd#libraries-and-tools)
 
 ## Usage
 
