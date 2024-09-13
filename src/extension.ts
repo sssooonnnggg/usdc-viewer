@@ -7,7 +7,6 @@ import * as path from 'path';
 import * as os from 'os';
 
 const MAX_TEXT_LENGTH = 1024 * 1024 * 1024;
-const TASK_CHUNK_SIZE = 32;
 
 const execAsync = promisify(exec);
 
@@ -19,6 +18,14 @@ const getUsdRoot = () => {
         vscode.window.showErrorMessage('Failed to get usdRoot');
     }
     return usdRoot;
+}
+
+const getWorkerCount = () => {
+    const workerCount = getConfig().workerCount;
+    if (!workerCount) {
+        vscode.window.showErrorMessage('Failed to get workerCount');
+    }
+    return workerCount;
 }
 
 const tryExec = async (command: string) => {
@@ -52,14 +59,6 @@ const getAllUsdFilesInDirectory = async (root: string, extension: string): Promi
     return usdcFiles;
 }
 
-const intoChunks = <T>(array: T[], chunkSize: number): (T[])[] => {
-    let chunks = [];
-    for (let i = 0; i < array.length; i += chunkSize) {
-        chunks.push(array.slice(i, i + chunkSize));
-    }
-    return chunks;
-}
-
 const anotherExtension = (extension: string) => extension === ".usdc" ? ".usda" : ".usdc";
 
 const getTargetName = (inputFile: string) => path.basename(inputFile, path.extname(inputFile)) + anotherExtension(path.extname(inputFile));
@@ -78,25 +77,36 @@ const convertDirectory = async (usdRoot: string, usdDirectory: string, sourceExt
         const startTime = Date.now();
         const sourceFiles = await getAllUsdFilesInDirectory(usdDirectory, sourceExtension);
         const totalCount = sourceFiles.length;
-        let convertedCount = 0;
 
-        const chunks = intoChunks(sourceFiles, TASK_CHUNK_SIZE);
-        for (const chunk of chunks) {
-            let promises = [];
-            for (const inputFile of chunk) {
+        // from 1 to THREAD_COUNT
+        let context = {
+            sourceFiles: sourceFiles,
+            cursor: sourceFiles.length - 1
+        };
+
+        const nextTick = () => new Promise(resolve => process.nextTick(resolve));
+
+        const worker = async (context: any) => {
+            await nextTick();
+            while (context.cursor >= 0) {
+                const inputFile = context.sourceFiles[context.cursor];
                 const outputFile = getOutputPath(inputFile);
                 const relativePath = path.relative(usdDirectory, outputFile);
-                const finished = () => {
-                    convertedCount++;
-                    progress.report(
-                        { message: `(${convertedCount}/${totalCount}) Converting ${relativePath}`, increment: 100 / totalCount })
-                };
-                const promise = usdcat(usdRoot, inputFile, outputFile).then(() => finished());
-                promises.push(promise);
+                progress.report(
+                    { message: `(${totalCount - context.cursor}/${totalCount}) Converting ${relativePath}`, increment: 100 / totalCount });
+                context.cursor--;
+                await usdcat(usdRoot, inputFile, outputFile);
             }
+        };
 
-            await Promise.all(promises);
+        let workers = [];
+        const workerCount = getWorkerCount();
+        for (let i = 1; i <= getWorkerCount(); i++) {
+            workers.push(worker(context));
         }
+        vscode.window.showInformationMessage(`Converting ${totalCount} files with ${workerCount} workers`);
+        await Promise.all(workers);
+
         const endTime = Date.now();
         const time = (endTime - startTime) / 1000;
         vscode.window.showInformationMessage(`Converted ${totalCount} files in ${time.toFixed(2)} seconds`);

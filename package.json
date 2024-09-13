@@ -3,7 +3,7 @@
     "displayName": "Usdc Viewer",
     "description": "View OpenUsd binary format(.usdc) as plain text format",
     "publisher": "sssooonnnggg",
-    "version": "0.0.15",
+    "version": "0.0.16",
     "engines": {
         "vscode": "^1.81.0"
     },
@@ -46,6 +46,11 @@
                 "usdc-viewer.usdRoot": {
                     "type": "string",
                     "description": "Path of the OpenUsd library"
+                },
+                "usdc-viewer.workerCount": {
+                    "type": "number",
+                    "description": "Number of workers to parse usdc",
+                    "default": 32
                 }
             }
         },
